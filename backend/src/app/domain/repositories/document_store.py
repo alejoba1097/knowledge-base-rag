@@ -1,14 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Protocol
 
-
-@dataclass
-class StoredDocument:
-    id: str
-    filename: str
-    path: str
+from app.domain.entities import StoredDocument
 
 
 class DocumentStore(Protocol):
