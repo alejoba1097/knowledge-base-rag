@@ -1,22 +1,11 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pydantic import BaseModel
-
 from app.core.config import Settings, settings_dependency
 from app.infrastructure import ChromaVectorStore, SentenceTransformerEmbeddingService, TesseractTextExtractor
 from app.application.upload_document import UploadDocumentUseCase
 from app.domain import VectorStore, EmbeddingService, TextExtractorService
+from app.interfaces.api.schemas import ChatRequest, ChatResponse
 
 router = APIRouter()
-
-
-class ChatRequest(BaseModel):
-    question: str
-    document_id: str | None = None
-
-
-class ChatResponse(BaseModel):
-    answer: str
-    source: str | None = None
 
 
 @router.get("/health")
