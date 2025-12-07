@@ -1,3 +1,4 @@
+from fastapi import Request
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,5 +22,9 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def settings_dependency() -> Settings:
+def settings_dependency(request: Request | None = None) -> Settings:
+    if request is not None:
+        existing = getattr(request.app.state, "settings", None)
+        if isinstance(existing, Settings):
+            return existing
     return get_settings()

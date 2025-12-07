@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from typing import Iterable
 
-from app.domain import DocumentChunk, TextExtractorService, VectorStore
+from app.domain import DocumentChunk, EmbeddingService, TextExtractorService, VectorStore
 
 
 class UploadDocumentUseCase:
@@ -11,12 +11,14 @@ class UploadDocumentUseCase:
     def __init__(
         self,
         *,
-        extractor: TextExtractorService,
+        text_extractor: TextExtractorService,
+        embedder: EmbeddingService,
         vector_store: VectorStore,
         chunk_size: int = 800,
         overlap: int = 100,
     ) -> None:
-        self.extractor = extractor
+        self.text_extractor = text_extractor
+        self.embedder = embedder
         self.vector_store = vector_store
         self.chunk_size = chunk_size
         self.overlap = overlap
@@ -40,19 +42,16 @@ class UploadDocumentUseCase:
         *,
         filename: str,
         data: bytes,
-        embeddings: Sequence[Sequence[float]] | None = None,
-        precomputed_chunks: Sequence[str] | None = None,
-        precomputed_text: str | None = None,
     ) -> str:
-        if not embeddings:
+        text = self.text_extractor.extract_text(data)
+        if not text:
             return filename
 
-        if precomputed_chunks is not None:
-            chunks = list(precomputed_chunks)
-        else:
-            text = precomputed_text or self.extractor.extract_text(data)
-            chunks = list(self.chunk_text(text))
+        chunks = list(self.chunk_text(text))
+        if not chunks:
+            return filename
 
+        embeddings = self.embedder.embed(chunks)
         doc_id = filename
         chunk_models: list[DocumentChunk] = []
         if len(embeddings) < len(chunks):
