@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ChatPanel, { type ChatMessage } from './components/ChatPanel';
 import UploadPanel, { type UploadStatus } from './components/UploadPanel';
 import { API_BASE_URL } from './config';
@@ -22,6 +22,28 @@ function App() {
 
   const isChatDisabled = useMemo(() => uploadStatus !== 'ready', [uploadStatus]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const checkHealth = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/health`, { signal: controller.signal });
+        if (response.ok) {
+          const body = await response.json();
+          console.log('[health] backend reachable:', body);
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.warn('[health] backend unreachable:', error);
+        }
+      }
+    };
+
+    void checkHealth();
+
+    return () => controller.abort();
+  }, []);
+
   const handleFileSelect = (nextFile: File | null) => {
     setFile(nextFile);
     setUploadStatus('idle');
@@ -34,16 +56,19 @@ function App() {
     setUploadStatus('uploading');
     setUploadStatusMessage('Uploading and indexing your PDF…');
     try {
+      console.log('[upload] starting upload', { name: file.name, size: file.size, type: file.type });
       const formData = new FormData();
       formData.append('file', file);
       const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         body: formData,
       });
+      console.log('[upload] response status', response.status);
       if (!response.ok) {
         throw new Error(`Upload failed: ${response.status}`);
       }
       const result = (await response.json()) as { document_id: string; filename: string };
+      console.log('[upload] success', result);
       setUploadStatus('ready');
       const message = `${result.filename} is ready. Ask questions to get grounded answers.`;
       setUploadStatusMessage(message);
@@ -56,6 +81,7 @@ function App() {
         },
       ]);
     } catch (error) {
+      console.error('[upload] error', error);
       setUploadStatus('error');
       const message = error instanceof Error ? error.message : 'Upload failed. Please try again.';
       setUploadStatusMessage(message);
