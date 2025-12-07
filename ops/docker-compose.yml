@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma-data:/data
+
+  backend:
+    build:
+      context: ..
+      dockerfile: ops/containers/backend/Dockerfile
+    environment:
+      KB_CHROMA_DIR: /data/chroma
+    volumes:
+      - backend-data:/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - chroma
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: ops/containers/frontend/Dockerfile
+    ports:
+      - "4173:4173"
+    depends_on:
+      - backend
+
+volumes:
+  chroma-data:
+  backend-data:
