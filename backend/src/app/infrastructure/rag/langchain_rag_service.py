@@ -5,7 +5,13 @@ from typing import Sequence
 
 import torch
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    pipeline,
+)
 
 from app.domain import DocumentChunk, RagService
 
@@ -33,18 +39,14 @@ class LangChainRagService(RagService):
     ) -> None:
         device_map = _device_map()
         logger.info("Loading RAG model %s with device_map=%s", model_name, device_map)
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model_kwargs = {"device_map": device_map} if device_map else {}
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
-        generation_pipeline = pipeline(
-            task="text2text-generation",
-            model=model,
-            tokenizer=tokenizer,
-            max_new_tokens=max_new_tokens,
-            temperature=temperature,
-            do_sample=temperature > 0,
+        self.llm = HuggingFacePipeline(
+            pipeline=_build_generation_pipeline(
+                model_name=model_name,
+                device_map=device_map,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+            )
         )
-        self.llm = HuggingFacePipeline(pipeline=generation_pipeline)
 
     def generate_answer(
         self,
@@ -65,4 +67,45 @@ class LangChainRagService(RagService):
             "If the answer is not in the context, say you do not know.\n\n"
             f"Context:\n{context_text}\n\nQuestion: {question}\nAnswer:"
         )
-        return self.llm.predict(prompt)
+        logger.info(f"[rag] prompt: {prompt}")
+
+        return self.llm.invoke(prompt)
+
+
+def _build_generation_pipeline(
+    *,
+    model_name: str,
+    device_map: str | None,
+    max_new_tokens: int,
+    temperature: float,
+):
+    """Create a HF pipeline that supports both seq2seq (e.g., FLAN) and causal (e.g., LLaMA) models."""
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    config = AutoConfig.from_pretrained(model_name)
+
+    model_kwargs = {"device_map": device_map} if device_map else {}
+    pipeline_kwargs = {
+        "max_new_tokens": max_new_tokens,
+        "temperature": temperature,
+        "do_sample": temperature > 0,
+    }
+
+    if config.is_encoder_decoder:
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
+        task = "text2text-generation"
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+        task = "text-generation"
+        # Many chat LLMs have no pad token; align it to EOS for batching/safety.
+        if tokenizer.pad_token is None and tokenizer.eos_token is not None:
+            tokenizer.pad_token = tokenizer.eos_token
+            tokenizer.padding_side = "right"
+        pipeline_kwargs["return_full_text"] = False
+        pipeline_kwargs.setdefault("eos_token_id", tokenizer.eos_token_id)
+
+    return pipeline(
+        task=task,
+        model=model,
+        tokenizer=tokenizer,
+        **pipeline_kwargs,
+    )

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     chroma_port: int = 8000
     chroma_collection_name: str = "documents"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    rag_model_name: str = "google/flan-t5-small"
+    rag_model_name: str = "microsoft/Phi-3-mini-4k-instruct"
     rag_top_k: int = 5
     rag_max_new_tokens: int = 256
     rag_temperature: float = 0.0

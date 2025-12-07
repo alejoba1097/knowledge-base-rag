@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -19,7 +19,7 @@ COPY backend/pyproject.toml ./pyproject.toml
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir pip-tools \
     && pip-compile pyproject.toml --output-file requirements.txt \
-    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu121 -r requirements.txt \
     && pip uninstall -y pip-tools
 
 # Copy application code
