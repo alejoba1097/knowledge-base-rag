@@ -8,7 +8,8 @@ from app.infrastructure import ChromaVectorStore, SentenceTransformerEmbeddingSe
 
 def _get_vector_store(settings: Settings) -> VectorStore:
     return ChromaVectorStore(
-        persist_dir=settings.chroma_dir,
+        host=settings.chroma_host,
+        port=settings.chroma_port,
         collection_name="documents",
         embedding_model=settings.embedding_model,
     )

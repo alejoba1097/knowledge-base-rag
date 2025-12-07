@@ -12,7 +12,8 @@ class Settings(BaseSettings):
 
     # Storage / vector config
     data_dir: str = "./data"
-    chroma_dir: str = "./data/chroma"
+    chroma_host: str = "chroma"
+    chroma_port: int = 8000
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
 

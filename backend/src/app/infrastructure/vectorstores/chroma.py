@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Iterable, List, Optional
 
 import chromadb
-from chromadb import ClientAPI
 from chromadb.api.models.Collection import Collection
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
@@ -17,11 +16,18 @@ class ChromaVectorStore(VectorStore):
     def __init__(
         self,
         *,
-        persist_dir: str,
+        host: str | None = None,
+        port: int | None = None,
+        persist_dir: str | None = None,
         collection_name: str = "documents",
         embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
     ) -> None:
-        self.client: ClientAPI = chromadb.PersistentClient(path=persist_dir)
+        if host:
+            self.client = chromadb.HttpClient(host=host, port=port or 8000)
+        elif persist_dir:
+            self.client = chromadb.PersistentClient(path=persist_dir)
+        else:
+            raise ValueError("ChromaVectorStore requires either host/port for server or persist_dir for local mode.")
         embedding_function = SentenceTransformerEmbeddingFunction(model_name=embedding_model)
         self.collection: Collection = self.client.get_or_create_collection(
             name=collection_name,
