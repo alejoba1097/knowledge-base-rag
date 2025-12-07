@@ -14,11 +14,18 @@ RUN apt-get update \
 
 WORKDIR /app/backend
 
-# Copy application code and install Python dependencies
+# Install Python dependencies first to leverage Docker layer caching
 COPY backend/pyproject.toml ./pyproject.toml
-COPY backend/src ./src
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir .
+    && pip install --no-cache-dir pip-tools \
+    && pip-compile pyproject.toml --output-file requirements.txt \
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip uninstall -y pip-tools
+
+# Copy application code
+COPY backend/src ./src
+
+ENV PYTHONPATH=/app/backend/src
 
 EXPOSE 8000
 
