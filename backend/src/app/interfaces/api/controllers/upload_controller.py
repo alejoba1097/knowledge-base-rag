@@ -3,7 +3,6 @@ from fastapi import HTTPException, UploadFile
 from app.application.upload_document import UploadDocumentUseCase
 from app.core.config import Settings
 from app.domain import EmbeddingService, TextExtractorService, VectorStore
-from app.interfaces.api.schemas import ChatResponse
 from app.infrastructure import ChromaVectorStore, SentenceTransformerEmbeddingService, TesseractTextExtractor
 
 
