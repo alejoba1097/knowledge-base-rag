@@ -35,15 +35,18 @@ class UploadDocumentUseCase:
                 break
         return [c for c in chunks if c]
 
-    def execute(
+    def embed_and_store(
         self,
         *,
         filename: str,
         data: bytes,
-        embeddings: Sequence[Sequence[float]],
+        embeddings: Sequence[Sequence[float]] | None = None,
         precomputed_chunks: Sequence[str] | None = None,
         precomputed_text: str | None = None,
     ) -> str:
+        if not embeddings:
+            return filename
+
         if precomputed_chunks is not None:
             chunks = list(precomputed_chunks)
         else:
@@ -52,15 +55,18 @@ class UploadDocumentUseCase:
 
         doc_id = filename
         chunk_models: list[DocumentChunk] = []
+        if len(embeddings) < len(chunks):
+            return doc_id
+
         for idx, chunk in enumerate(chunks):
             chunk_models.append(
                 DocumentChunk(
                     id=f"{doc_id}::chunk-{idx}",
                     content=chunk,
                     metadata={"filename": filename, "chunk": str(idx)},
-                    embedding=list(embeddings[idx]) if idx < len(embeddings) else None,
+                    embedding=list(embeddings[idx]),
                 )
             )
 
-        self.vector_store.add_documents(chunk_models, embeddings)
+        self.vector_store.add_documents(chunk_models)
         return doc_id

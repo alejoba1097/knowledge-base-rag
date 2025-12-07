@@ -50,7 +50,7 @@ async def upload_pdf(
     text = extractor.extract_text(data)
     chunks = list(use_case.chunk_text(text))
     embeddings = embedder.embed(chunks)
-    doc_id = use_case.execute(
+    doc_id = use_case.embed_and_store(
         filename=file.filename,
         data=data,
         embeddings=embeddings,
