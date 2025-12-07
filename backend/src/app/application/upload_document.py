@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Iterable
 
 from app.domain import DocumentChunk, EmbeddingService, TextExtractorService, VectorStore
+
+logger = logging.getLogger(__name__)
 
 
 class UploadDocumentUseCase:
@@ -43,18 +46,32 @@ class UploadDocumentUseCase:
         filename: str,
         data: bytes,
     ) -> str:
+        logger.info("Starting upload pipeline for filename=%s", filename)
+
         text = self.text_extractor.extract_text(data)
         if not text:
+            logger.warning("No text extracted for filename=%s; skipping.", filename)
             return filename
 
         chunks = list(self.chunk_text(text))
         if not chunks:
+            logger.warning("No chunks generated for filename=%s; skipping.", filename)
             return filename
 
+        logger.info("Generated %d chunks for filename=%s", len(chunks), filename)
+
         embeddings = self.embedder.embed(chunks)
+        logger.info("Computed embeddings for %d chunks for filename=%s", len(embeddings), filename)
+
         doc_id = filename
         chunk_models: list[DocumentChunk] = []
         if len(embeddings) < len(chunks):
+            logger.error(
+                "Embedding count %d is less than chunk count %d for filename=%s; aborting store.",
+                len(embeddings),
+                len(chunks),
+                filename,
+            )
             return doc_id
 
         for idx, chunk in enumerate(chunks):
@@ -68,4 +85,5 @@ class UploadDocumentUseCase:
             )
 
         self.vector_store.add_documents(chunk_models)
+        logger.info("Stored %d chunks for filename=%s", len(chunk_models), filename)
         return doc_id
