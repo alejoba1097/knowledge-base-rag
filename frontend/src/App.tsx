@@ -56,9 +56,12 @@ function App() {
     setUploadStatus('uploading');
     setUploadStatusMessage('Uploading and indexing your PDF…');
     try {
-      console.log('[upload] starting upload', { name: file.name, size: file.size, type: file.type });
+      const uploadContext = { name: file.name, size: file.size, type: file.type, apiUrl: `${API_BASE_URL}/upload` };
+      console.log('[upload] starting upload', uploadContext);
       const formData = new FormData();
+      console.log('[upload] preparing to append file to form data');
       formData.append('file', file);
+      console.log('[upload] preparing to fetch upload endpoint');
       const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         body: formData,
