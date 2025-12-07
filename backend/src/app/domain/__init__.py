@@ -1,7 +1,8 @@
-"""Domain layer: entities and repository interfaces."""
+"""Domain layer: entities, repositories, and services."""
 
 from app.domain.entities import DocumentChunk, QueryResult, StoredDocument
 from app.domain.repositories import DocumentStore, VectorStore
+from app.domain.services import TextExtractorService
 
 __all__ = [
     "DocumentChunk",
@@ -9,4 +10,5 @@ __all__ = [
     "StoredDocument",
     "DocumentStore",
     "VectorStore",
+    "TextExtractorService",
 ]
