@@ -58,6 +58,7 @@ class UploadDocumentUseCase:
                     id=f"{doc_id}::chunk-{idx}",
                     content=chunk,
                     metadata={"filename": filename, "chunk": str(idx)},
+                    embedding=list(embeddings[idx]) if idx < len(embeddings) else None,
                 )
             )
 

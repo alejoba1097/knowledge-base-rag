@@ -37,8 +37,18 @@ class ChromaVectorStore(VectorStore):
         documents = [chunk.content for chunk in chunk_list]
         metadatas = [chunk.metadata or {} for chunk in chunk_list]
 
+        # Use embeddings passed in; fall back to any on the chunk itself if needed.
+        final_embeddings: list[Sequence[float]] = []
+        for idx, chunk in enumerate(chunk_list):
+            if idx < len(embeddings):
+                final_embeddings.append(embeddings[idx])
+            elif chunk.embedding is not None:
+                final_embeddings.append(chunk.embedding)
+        if not final_embeddings:
+            return
+
         # Upsert to allow idempotent writes when the same chunk ids are provided.
-        self.collection.upsert(ids=ids, documents=documents, metadatas=metadatas, embeddings=list(embeddings))
+        self.collection.upsert(ids=ids, documents=documents, metadatas=metadatas, embeddings=final_embeddings)
 
     def query(self, text: str, limit: int = 5) -> List[QueryResult]:
         results = self.collection.query(query_texts=[text], n_results=limit)

@@ -15,6 +15,7 @@ class DocumentChunk:
     id: str
     content: str
     metadata: dict[str, str] | None = None
+    embedding: list[float] | None = None
 
 
 @dataclass
