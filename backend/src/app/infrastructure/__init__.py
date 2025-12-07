@@ -2,5 +2,6 @@
 
 from app.infrastructure.vectorstores import ChromaVectorStore
 from app.infrastructure.text_extraction import TesseractTextExtractor
+from app.infrastructure.embeddings import SentenceTransformerEmbeddingService
 
-__all__ = ["ChromaVectorStore", "TesseractTextExtractor"]
+__all__ = ["ChromaVectorStore", "TesseractTextExtractor", "SentenceTransformerEmbeddingService"]
