@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import ChatPanel, { type ChatMessage } from './components/ChatPanel';
 import UploadPanel, { type UploadStatus } from './components/UploadPanel';
+import { API_BASE_URL } from './config';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -33,21 +34,31 @@ function App() {
     setUploadStatus('uploading');
     setUploadStatusMessage('Uploading and indexing your PDF…');
     try {
-      await delay(900);
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+      const result = (await response.json()) as { document_id: string; filename: string };
       setUploadStatus('ready');
-      const message = `${file.name} is ready. Ask questions to get grounded answers.`;
+      const message = `${result.filename} is ready. Ask questions to get grounded answers.`;
       setUploadStatusMessage(message);
       setMessages((prev) => [
         ...prev,
         {
           id: crypto.randomUUID(),
           role: 'system',
-          content: `Indexed ${file.name}. Stream answers from your backend here.`,
+          content: `Indexed ${result.filename}. Stream answers from your backend here.`,
         },
       ]);
     } catch (error) {
       setUploadStatus('error');
-      setUploadStatusMessage('Upload failed. Please try again.');
+      const message = error instanceof Error ? error.message : 'Upload failed. Please try again.';
+      setUploadStatusMessage(message);
     }
   };
 
