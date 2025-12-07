@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from app.domain import DocumentChunk, TextExtractorService, VectorStore
 
@@ -35,12 +35,12 @@ class UploadDocumentUseCase:
                 break
         return [c for c in chunks if c]
 
-    def execute(self, *, filename: str, data: bytes) -> str:
+    def execute(self, *, filename: str, data: bytes, embeddings: Sequence[Sequence[float]]) -> str:
         text = self.extractor.extract_text(data)
         chunks = self._chunk_text(text)
 
         doc_id = filename
-        chunk_models = []
+        chunk_models: list[DocumentChunk] = []
         for idx, chunk in enumerate(chunks):
             chunk_models.append(
                 DocumentChunk(
@@ -50,5 +50,5 @@ class UploadDocumentUseCase:
                 )
             )
 
-        self.vector_store.add_documents(chunk_models)
+        self.vector_store.add_documents(chunk_models, embeddings)
         return doc_id

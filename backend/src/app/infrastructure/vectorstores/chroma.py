@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Sequence
 
 import chromadb
 from chromadb import ClientAPI
@@ -28,9 +28,9 @@ class ChromaVectorStore(VectorStore):
             embedding_function=embedding_function,
         )
 
-    def add_documents(self, chunks: Iterable[DocumentChunk]) -> None:
+    def add_documents(self, chunks: Iterable[DocumentChunk], embeddings: Sequence[Sequence[float]]) -> None:
         chunk_list = list(chunks)
-        if not chunk_list:
+        if not chunk_list or not embeddings:
             return
 
         ids = [chunk.id for chunk in chunk_list]
@@ -38,7 +38,7 @@ class ChromaVectorStore(VectorStore):
         metadatas = [chunk.metadata or {} for chunk in chunk_list]
 
         # Upsert to allow idempotent writes when the same chunk ids are provided.
-        self.collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+        self.collection.upsert(ids=ids, documents=documents, metadatas=metadatas, embeddings=list(embeddings))
 
     def query(self, text: str, limit: int = 5) -> List[QueryResult]:
         results = self.collection.query(query_texts=[text], n_results=limit)
