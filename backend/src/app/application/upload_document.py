@@ -21,7 +21,7 @@ class UploadDocumentUseCase:
         self.chunk_size = chunk_size
         self.overlap = overlap
 
-    def _chunk_text(self, text: str) -> Iterable[str]:
+    def chunk_text(self, text: str) -> Iterable[str]:
         if not text:
             return []
         chunks: list[str] = []
@@ -35,9 +35,20 @@ class UploadDocumentUseCase:
                 break
         return [c for c in chunks if c]
 
-    def execute(self, *, filename: str, data: bytes, embeddings: Sequence[Sequence[float]]) -> str:
-        text = self.extractor.extract_text(data)
-        chunks = self._chunk_text(text)
+    def execute(
+        self,
+        *,
+        filename: str,
+        data: bytes,
+        embeddings: Sequence[Sequence[float]],
+        precomputed_chunks: Sequence[str] | None = None,
+        precomputed_text: str | None = None,
+    ) -> str:
+        if precomputed_chunks is not None:
+            chunks = list(precomputed_chunks)
+        else:
+            text = precomputed_text or self.extractor.extract_text(data)
+            chunks = list(self.chunk_text(text))
 
         doc_id = filename
         chunk_models: list[DocumentChunk] = []
