@@ -12,7 +12,6 @@ async def handle_upload(
     use_case: UploadDocumentUseCase,
 ) -> dict[str, str]:
     logger.info("Received upload request: filename=%s content_type=%s", file.filename, file.content_type)
-
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
 

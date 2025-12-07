@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +10,20 @@ from app.infrastructure import ChromaVectorStore, SentenceTransformerEmbeddingSe
 from app.interfaces.api import get_api_router
 
 
+def configure_logging() -> None:
+    """Ensure application logs are visible in the console."""
+    level = logging.INFO
+    root = logging.getLogger()
+    if not root.handlers:
+        logging.basicConfig(
+            level=level,
+            format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+        )
+    root.setLevel(level)
+
+
 def create_app() -> FastAPI:
+    configure_logging()
     settings = get_settings()
 
     @asynccontextmanager
@@ -20,7 +34,7 @@ def create_app() -> FastAPI:
         app.state.vector_store = ChromaVectorStore(
             host=settings.chroma_host,
             port=settings.chroma_port,
-            collection_name="documents",
+            collection_name=settings.chroma_collection_name,
             embedding_model=settings.embedding_model,
         )
         app.state.upload_use_case = UploadDocumentUseCase(

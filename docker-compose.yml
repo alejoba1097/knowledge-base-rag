@@ -16,6 +16,7 @@ services:
     environment:
       KB_CHROMA_HOST: chroma
       KB_CHROMA_PORT: 8000
+      KB_CHROMA_COLLECTION_NAME: documents
     ports:
       - "8000:8000"
     depends_on:

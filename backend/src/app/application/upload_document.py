@@ -30,14 +30,17 @@ class UploadDocumentUseCase:
         if not text:
             return []
         chunks: list[str] = []
-        start = 0
         length = len(text)
+        start = 0
+        # Ensure forward progress even if overlap is accidentally large
+        step = max(self.chunk_size - self.overlap, 1)
+
         while start < length:
             end = min(start + self.chunk_size, length)
             chunks.append(text[start:end].strip())
-            start = max(end - self.overlap, 0 if end == length else end - self.overlap)
-            if start >= length:
+            if end == length:
                 break
+            start += step
         return [c for c in chunks if c]
 
     def embed_and_store(
