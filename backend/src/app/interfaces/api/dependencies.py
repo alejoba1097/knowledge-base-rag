@@ -5,7 +5,8 @@ from typing import cast
 from fastapi import Request
 
 from app.application.upload_document import UploadDocumentUseCase
-from app.domain import EmbeddingService, TextExtractorService, VectorStore
+from app.application.chat import ChatUseCase
+from app.domain import EmbeddingService, RagService, TextExtractorService, VectorStore
 
 
 def get_vector_store(request: Request) -> VectorStore:
@@ -34,3 +35,17 @@ def get_upload_use_case(request: Request) -> UploadDocumentUseCase:
     if upload_use_case is None:
         raise RuntimeError("UploadDocumentUseCase has not been initialized.")
     return cast(UploadDocumentUseCase, upload_use_case)
+
+
+def get_rag_service(request: Request) -> RagService:
+    rag_service = getattr(request.app.state, "rag_service", None)
+    if rag_service is None:
+        raise RuntimeError("RagService has not been initialized.")
+    return cast(RagService, rag_service)
+
+
+def get_chat_use_case(request: Request) -> ChatUseCase:
+    chat_use_case = getattr(request.app.state, "chat_use_case", None)
+    if chat_use_case is None:
+        raise RuntimeError("ChatUseCase has not been initialized.")
+    return cast(ChatUseCase, chat_use_case)

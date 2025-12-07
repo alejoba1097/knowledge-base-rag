@@ -2,7 +2,7 @@
 
 from app.domain.entities import DocumentChunk, QueryResult, StoredDocument
 from app.domain.repositories import DocumentStore, VectorStore
-from app.domain.services import EmbeddingService, TextExtractorService
+from app.domain.services import EmbeddingService, RagService, TextExtractorService
 
 __all__ = [
     "DocumentChunk",
@@ -12,4 +12,5 @@ __all__ = [
     "VectorStore",
     "TextExtractorService",
     "EmbeddingService",
+    "RagService",
 ]

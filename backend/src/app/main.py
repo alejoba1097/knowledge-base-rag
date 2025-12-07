@@ -4,9 +4,15 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.application.chat import ChatUseCase
 from app.application.upload_document import UploadDocumentUseCase
 from app.core.config import get_settings
-from app.infrastructure import ChromaVectorStore, SentenceTransformerEmbeddingService, TesseractTextExtractor
+from app.infrastructure import (
+    ChromaVectorStore,
+    LangChainRagService,
+    SentenceTransformerEmbeddingService,
+    TesseractTextExtractor,
+)
 from app.interfaces.api import get_api_router
 
 
@@ -37,12 +43,22 @@ def create_app() -> FastAPI:
             collection_name=settings.chroma_collection_name,
             embedding_model=settings.embedding_model,
         )
+        app.state.rag_service = LangChainRagService(
+            model_name=settings.rag_model_name,
+            max_new_tokens=settings.rag_max_new_tokens,
+            temperature=settings.rag_temperature,
+        )
         app.state.upload_use_case = UploadDocumentUseCase(
             text_extractor=app.state.text_extractor,
             embedder=app.state.embedding_service,
             vector_store=app.state.vector_store,
             chunk_size=800,
             overlap=100,
+        )
+        app.state.chat_use_case = ChatUseCase(
+            vector_store=app.state.vector_store,
+            rag_service=app.state.rag_service,
+            top_k=settings.rag_top_k,
         )
         yield
 

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 
 from app.application.upload_document import UploadDocumentUseCase
-from app.core.config import Settings, settings_dependency
+from app.application.chat import ChatUseCase
 from app.interfaces.api.controllers import handle_chat, handle_upload
-from app.interfaces.api.dependencies import get_upload_use_case
+from app.interfaces.api.dependencies import get_chat_use_case, get_upload_use_case
 from app.interfaces.api.schemas import ChatRequest, ChatResponse
 
 router = APIRouter()
@@ -25,6 +25,6 @@ async def upload_pdf(
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     payload: ChatRequest,
-    settings: Settings = Depends(settings_dependency),
+    chat_use_case: ChatUseCase = Depends(get_chat_use_case),
 ) -> ChatResponse:
-    return await handle_chat(payload, settings)
+    return await handle_chat(payload, chat_use_case)

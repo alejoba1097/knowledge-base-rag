@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     chroma_port: int = 8000
     chroma_collection_name: str = "documents"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    rag_model_name: str = "google/flan-t5-small"
+    rag_top_k: int = 5
+    rag_max_new_tokens: int = 256
+    rag_temperature: float = 0.0
 
     # API / CORS
     cors_origins: list[str] = ["*"]
