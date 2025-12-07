@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     chroma_port: int = 8000
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
+    # API / CORS
+    cors_origins: list[str] = ["*"]
+
 
 def get_settings() -> Settings:
     return Settings()
