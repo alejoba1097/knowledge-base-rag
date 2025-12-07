@@ -3,7 +3,7 @@ import ChatPanel, { type ChatMessage } from './components/ChatPanel';
 import UploadPanel, { type UploadStatus } from './components/UploadPanel';
 import { API_BASE_URL } from './config';
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+type ChatResponse = { answer: string; source?: string | null };
 
 const seedMessages: ChatMessage[] = [
   {
@@ -15,6 +15,7 @@ const seedMessages: ChatMessage[] = [
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [uploadStatusMessage, setUploadStatusMessage] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(seedMessages);
@@ -46,6 +47,7 @@ function App() {
 
   const handleFileSelect = (nextFile: File | null) => {
     setFile(nextFile);
+    setDocumentId(null);
     setUploadStatus('idle');
     setUploadStatusMessage(null);
   };
@@ -72,6 +74,7 @@ function App() {
       }
       const result = (await response.json()) as { document_id: string; filename: string };
       console.log('[upload] success', result);
+      setDocumentId(result.document_id);
       setUploadStatus('ready');
       const message = `${result.filename} is ready. Ask questions to get grounded answers.`;
       setUploadStatusMessage(message);
@@ -104,19 +107,33 @@ function App() {
     setMessages((prev) => [...prev, userMessage]);
     setIsSending(true);
 
-    await delay(650);
-
-    const assistantMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content:
-        uploadStatus === 'ready'
-          ? `Placeholder response referencing ${file?.name ?? 'your document'}. Connect to your backend to stream real answers grounded in the uploaded PDF.`
-          : 'Upload and index a PDF to unlock grounded answers.',
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
-    setIsSending(false);
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: trimmed, document_id: documentId }),
+      });
+      if (!response.ok) {
+        throw new Error(`Chat failed: ${response.status}`);
+      }
+      const result = (await response.json()) as ChatResponse;
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: result.answer,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Chat failed. Please try again.';
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `Could not get an answer: ${message}`,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
